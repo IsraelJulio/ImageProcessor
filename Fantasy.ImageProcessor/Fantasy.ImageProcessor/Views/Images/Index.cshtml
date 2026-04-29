@@ -1,0 +1,67 @@
+@{
+    ViewData["Title"] = "Processador de Medalhas";
+}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <title>Processador de Medalhas</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            padding: 40px;
+        }
+
+        .card {
+            max-width: 600px;
+            margin: auto;
+            background: #1f2937;
+            padding: 30px;
+            border-radius: 16px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            background: #22c55e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        .error {
+            color: #f87171;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Fantasy Image Processor</h1>
+        <p>Selecione várias imagens para transformar em PNG 512x512 com fundo transparente.</p>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="error">@ViewBag.Error</div>
+        }
+
+       <form action="/Images/Upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="files" multiple accept="image/png,image/jpeg,image/webp" />
+
+    <button type="submit">
+        Processar imagens
+    </button>
+</form>
+    </div>
+</body>
+</html>

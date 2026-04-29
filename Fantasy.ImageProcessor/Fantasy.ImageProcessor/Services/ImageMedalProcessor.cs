@@ -1,6 +1,12 @@
+
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using System.IO.Compression;
 
 namespace Fantasy.ImageProcessor.Services;
 
@@ -8,6 +14,56 @@ public sealed class ImageMedalProcessor
 {
     private const byte TransparentAlpha = 0;
     private const byte OpaqueAlpha = 255;
+    public async Task<byte[]> NormalizeTo512Async(IFormFile file)
+    {
+        using var inputStream = file.OpenReadStream();
+        using var image = await Image.LoadAsync<Rgba32>(inputStream);
+
+        image.Mutate(x =>
+            x.Resize(new ResizeOptions
+            {
+                Size = new Size(512, 512),
+                Mode = ResizeMode.Max
+            }));
+
+        using var canvas = new Image<Rgba32>(512, 512, Color.Transparent);
+
+        var xPos = (512 - image.Width) / 2;
+        var yPos = (512 - image.Height) / 2;
+
+        canvas.Mutate(ctx => ctx.DrawImage(image, new Point(xPos, yPos), 1f));
+
+        using var output = new MemoryStream();
+        await canvas.SaveAsPngAsync(output);
+
+        return output.ToArray();
+    }
+
+    public async Task<byte[]> NormalizeManyToZipAsync(List<IFormFile> files)
+    {
+        using var zipStream = new MemoryStream();
+
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var file in files)
+            {
+                Console.WriteLine($"Processando: {file.FileName}");
+
+                await using var inputStream = file.OpenReadStream();
+                var normalizedBytes = await ProcessAsync(inputStream, 512);
+
+                Console.WriteLine($"Finalizado: {file.FileName}");
+
+                var originalName = Path.GetFileNameWithoutExtension(file.FileName);
+                var entry = archive.CreateEntry($"{originalName}-512.png");
+
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(normalizedBytes);
+            }
+        }
+
+        return zipStream.ToArray();
+    }
 
     public async Task<byte[]> ProcessAsync(Stream input, int finalSize = 512, CancellationToken cancellationToken = default)
     {
