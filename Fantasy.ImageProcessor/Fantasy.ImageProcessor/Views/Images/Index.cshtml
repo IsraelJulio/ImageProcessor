@@ -63,5 +63,28 @@
     </button>
 </form>
     </div>
+    <hr />
+
+<h2>Comprimir imagens em lote</h2>
+
+<form action="/Images/Compress" method="post" enctype="multipart/form-data">
+    <input type="file" name="files" multiple accept="image/png,image/jpeg,image/webp" />
+
+    <label>Largura máxima</label>
+    <input type="number" name="maxWidth" value="1024" />
+
+    <label>Qualidade</label>
+    <input type="number" name="quality" value="75" min="1" max="100" />
+
+    <label>Formato</label>
+    <select name="format">
+        <option value="webp">WebP - melhor compressão</option>
+        <option value="jpg">JPG - mais compatível</option>
+    </select>
+
+    <button type="submit">
+        Comprimir imagens
+    </button>
+</form>
 </body>
 </html>

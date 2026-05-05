@@ -7,6 +7,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.IO.Compression;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Webp;
 
 namespace Fantasy.ImageProcessor.Services;
 
@@ -235,5 +237,84 @@ public sealed class ImageMedalProcessor
 
         canvas.Mutate(x => x.DrawImage(source, new Point(posX, posY), OpaqueAlpha / 255f));
         return canvas;
+    }
+    public async Task<byte[]> CompressManyToZipAsync(
+    List<IFormFile> files,
+    int maxWidth = 1024,
+    int quality = 75,
+    string format = "webp",
+    CancellationToken cancellationToken = default)
+    {
+        using var zipStream = new MemoryStream();
+
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var file in files)
+            {
+                Console.WriteLine($"Comprimindo: {file.FileName}");
+
+                await using var inputStream = file.OpenReadStream();
+
+                var compressedBytes = await CompressImageAsync(
+                    inputStream,
+                    maxWidth,
+                    quality,
+                    format,
+                    cancellationToken);
+
+                var originalName = Path.GetFileNameWithoutExtension(file.FileName);
+                var extension = format.ToLowerInvariant() == "jpg" || format.ToLowerInvariant() == "jpeg"
+                    ? "jpg"
+                    : "webp";
+
+                var entry = archive.CreateEntry($"{originalName}-compressed.{extension}");
+
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(compressedBytes, cancellationToken);
+
+                Console.WriteLine($"Finalizado: {file.FileName}");
+            }
+        }
+
+        return zipStream.ToArray();
+    }
+
+    public async Task<byte[]> CompressImageAsync(
+        Stream input,
+        int maxWidth = 1024,
+        int quality = 75,
+        string format = "webp",
+        CancellationToken cancellationToken = default)
+    {
+        using var image = await Image.LoadAsync(input, cancellationToken);
+
+        if (image.Width > maxWidth)
+        {
+            var ratio = (double)maxWidth / image.Width;
+            var newHeight = (int)(image.Height * ratio);
+
+            image.Mutate(x => x.Resize(maxWidth, newHeight));
+        }
+
+        await using var output = new MemoryStream();
+
+        format = format.ToLowerInvariant();
+
+        if (format == "jpg" || format == "jpeg")
+        {
+            await image.SaveAsJpegAsync(output, new JpegEncoder
+            {
+                Quality = quality
+            }, cancellationToken);
+        }
+        else
+        {
+            await image.SaveAsWebpAsync(output, new WebpEncoder
+            {
+                Quality = quality
+            }, cancellationToken);
+        }
+
+        return output.ToArray();
     }
 }

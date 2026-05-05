@@ -8,12 +8,12 @@ builder.Services.AddScoped<ImageMedalProcessor>();
 
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 104857600; // 100MB
+    options.MultipartBodyLengthLimit = 524288000; // 500MB
 });
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 104857600; // 100MB
+    options.Limits.MaxRequestBodySize = 524288000; // 500MB
 });
 
 var app = builder.Build();
