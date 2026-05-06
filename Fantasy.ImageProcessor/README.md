@@ -43,3 +43,8 @@ curl -X POST "http://localhost:5140/api/images/normalize-medal?size=512" \
 Esse projeto não usa IA. Ele funciona melhor quando o fundo é claro/cinza em padrão xadrez, como as imagens geradas com falso fundo transparente.
 
 Ele não remove todo branco da imagem. A lógica remove apenas pixels claros/cinzas conectados às bordas, preservando elementos internos como letras brancas, camisas e brilhos.
+
+## TODO
+implementar reducao dd cartas em nivel de pixels 
+implementar download de cartas via arquivo .zip
+
